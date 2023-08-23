@@ -5,6 +5,7 @@ import android.content.Intent
 import android.graphics.Bitmap
 import android.net.Uri
 import android.os.Bundle
+import android.os.Environment
 import android.view.View
 import android.widget.ImageButton
 import androidx.appcompat.app.AppCompatActivity
@@ -21,6 +22,10 @@ import com.websitebeaver.documentscanner.ui.ImageCropView
 import com.websitebeaver.documentscanner.utils.CameraUtil
 import com.websitebeaver.documentscanner.utils.FileUtil
 import com.websitebeaver.documentscanner.utils.ImageUtil
+import com.websitebeaver.documentscanner.utils.insertMedia
+import com.websitebeaver.documentscanner.utils.needStoragePermission
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
 import org.opencv.core.Point
 import java.io.File
 
@@ -386,12 +391,20 @@ class DocumentScannerActivity : AppCompatActivity() {
                 val croppedImageFile = FileUtil().createImageFile(this, pageNumber)
                 croppedImage.saveToFile(croppedImageFile, croppedImageQuality)
                 croppedImageResults.add(Uri.fromFile(croppedImageFile).toString())
+                if (!needStoragePermission) {
+                    GlobalScope.launch {
+                        runCatching {
+                            insertMedia(croppedImageFile, Environment.DIRECTORY_PICTURES)
+                        }
+                    }
+                }
             } catch (exception: Exception) {
                 finishIntentWithError(
                     "unable to save cropped image: ${exception.message}"
                 )
+                return
             }
-            croppedImage?.recycle()
+            croppedImage.recycle()
         }
 
         // return array of cropped document photo file paths
