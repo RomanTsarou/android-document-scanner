@@ -40,6 +40,7 @@ class CameraUtil(
                 // send back photo file path on capture success
                 onPhotoCaptureSuccess(photoFilePath)
             }
+
             Activity.RESULT_CANCELED -> {
                 // delete the photo since the user didn't finish taking the photo
                 File(photoFilePath).delete()
@@ -59,7 +60,7 @@ class CameraUtil(
         val takePictureIntent = Intent(MediaStore.ACTION_IMAGE_CAPTURE)
 
         // create new file for photo
-        val photoFile: File = FileUtil().createImageFile(activity, pageNumber)
+        val photoFile: File = File.createTempFile("PHOTO_", null, activity.cacheDir)
 
         // store the photo file path, and send it back once the photo is saved
         photoFilePath = photoFile.absolutePath

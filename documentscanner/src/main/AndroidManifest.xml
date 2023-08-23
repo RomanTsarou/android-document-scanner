@@ -2,13 +2,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.websitebeaver.documentscanner">
 
-    <uses-feature
-        android:name="android.hardware.camera"
-        android:required="true" />
-
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
-    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
-
     <application>
         <activity
             android:name=".DocumentScannerActivity"
@@ -17,7 +10,7 @@
             android:theme="@style/Theme.FullScreen" />
 
         <provider
-            android:name="com.websitebeaver.documentscanner.DocumentScannerFileProvider"
+            android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.DocumentScannerFileProvider"
             android:exported="false"
             android:grantUriPermissions="true">
