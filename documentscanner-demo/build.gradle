@@ -4,12 +4,14 @@ plugins {
 }
 
 android {
-    compileSdk 32
+    namespace "com.websitebeaver.documentscanner.demo"
+
+    compileSdk 34
 
     defaultConfig {
         applicationId "com.websitebeaver.documentscanner.demo"
         minSdk 21
-        targetSdk 32
+        targetSdk 34
         versionCode 1
         versionName "1.0"
 
@@ -32,9 +34,8 @@ android {
 }
 
 dependencies {
-    implementation 'androidx.core:core-ktx:1.6.0'
-    implementation 'androidx.appcompat:appcompat:1.3.1'
-    implementation 'androidx.constraintlayout:constraintlayout:2.1.3'
+    implementation 'androidx.appcompat:appcompat:1.6.1'
+    implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
     implementation project(path: ':documentscanner')
     testImplementation 'junit:junit:4.13.2'
     androidTestImplementation 'androidx.test.ext:junit:1.1.3'
