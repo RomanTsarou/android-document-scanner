@@ -4,20 +4,21 @@ import android.content.ContentResolver
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Matrix
+import android.graphics.Rect
 import android.media.ExifInterface
 import android.net.Uri
 import com.websitebeaver.documentscanner.extensions.distance
 import com.websitebeaver.documentscanner.extensions.toOpenCVPoint
 import com.websitebeaver.documentscanner.models.Quad
-import java.io.File
-import kotlin.math.min
 import org.opencv.android.Utils
 import org.opencv.core.Mat
 import org.opencv.core.MatOfPoint2f
 import org.opencv.core.Point
 import org.opencv.core.Size
-import org.opencv.imgcodecs.Imgcodecs
 import org.opencv.imgproc.Imgproc
+import java.io.File
+import kotlin.math.max
+import kotlin.math.min
 
 /**
  * This class contains helper functions for processing images
@@ -25,83 +26,85 @@ import org.opencv.imgproc.Imgproc
  * @constructor creates image util
  */
 class ImageUtil {
-    /**
-     * get image matrix from file path
-     *
-     * @param filePath image is saved here
-     * @return image matrix
-     */
-    private fun getImageMatrixFromFilePath(filePath: String): Mat {
-        // read image as matrix using OpenCV
-        val image: Mat = Imgcodecs.imread(filePath)
 
-        // if OpenCV fails to read the image then it's empty
-        if (!image.empty()) {
-            // convert image to RGB color space since OpenCV reads it using BGR color space
-            Imgproc.cvtColor(image, image, Imgproc.COLOR_BGR2RGB)
-            return image
-        }
-
-        if (!File(filePath).exists()) {
-            throw Exception("File doesn't exist - $filePath")
-        }
-
-        if (!File(filePath).canRead()) {
-            throw Exception("You don't have permission to read $filePath")
-        }
-
-        // try reading image without OpenCV
-        var imageBitmap = BitmapFactory.decodeFile(filePath)
-        val rotation = when (ExifInterface(filePath).getAttributeInt(
+    private fun getExifRotation(filePath: String): Int {
+        val orientation = ExifInterface(filePath).getAttributeInt(
             ExifInterface.TAG_ORIENTATION,
             ExifInterface.ORIENTATION_NORMAL
-        )) {
+        )
+
+        val rotation = when (orientation) {
             ExifInterface.ORIENTATION_ROTATE_90 -> 90
             ExifInterface.ORIENTATION_ROTATE_180 -> 180
             ExifInterface.ORIENTATION_ROTATE_270 -> 270
             else -> 0
         }
-        imageBitmap = Bitmap.createBitmap(
-            imageBitmap,
-            0,
-            0,
-            imageBitmap.width,
-            imageBitmap.height,
-            Matrix().apply { postRotate(rotation.toFloat()) },
-            true
-        )
-        Utils.bitmapToMat(imageBitmap, image)
+        return rotation
+    }
 
-        return image
+    private fun readBitmapFromFile(file: File, rotation: Int): Bitmap {
+        val maxContentSize = 4000 //Any limit to avoid running out of memory
+        val opts = BitmapFactory.Options()
+        opts.inJustDecodeBounds = true
+        file.inputStream()
+            .use { BitmapFactory.decodeStream(it, null, opts) }
+        val bitmapRect = Rect(0, 0, opts.outWidth, opts.outHeight)
+        val maxBitmapSize = max(bitmapRect.width(), bitmapRect.height())
+        opts.inJustDecodeBounds = false
+        opts.inSampleSize = max(1, maxBitmapSize / maxContentSize)
+        val bitmap = file.inputStream()
+            .use { BitmapFactory.decodeStream(it, null, opts)!! }
+        return if (rotation != 0) {
+            val rotated = Bitmap.createBitmap(
+                bitmap,
+                0,
+                0,
+                bitmap.width,
+                bitmap.height,
+                Matrix().apply { postRotate(1f * rotation) },
+                true
+            )
+            if (bitmap !== rotated) {
+                bitmap.recycle()
+            }
+            rotated
+        } else bitmap
     }
 
     /**
      * get bitmap image from file path
      *
-     * @param filePath image is saved here
+     * @param file image is saved here
      * @return image bitmap
      */
-    fun getImageFromFilePath(filePath: String): Bitmap {
-        // read image as matrix using OpenCV
-        val image: Mat = this.getImageMatrixFromFilePath(filePath)
+    fun getImageFromFile(file: File): Bitmap {
+        if (!file.exists()) {
+            throw Exception("File doesn't exist - $file")
+        }
 
-        // convert image matrix to bitmap
-        val bitmap = Bitmap.createBitmap(image.cols(), image.rows(), Bitmap.Config.ARGB_8888)
-        Utils.matToBitmap(image, bitmap)
-        return bitmap
+        if (file.length() == 0L) {
+            throw Exception("File is empty $file")
+        }
+
+        if (!file.canRead()) {
+            throw Exception("You don't have permission to read $file")
+        }
+        val rotation = getExifRotation(file.absolutePath)
+        return readBitmapFromFile(file, rotation)
     }
 
     /**
      * take a photo with a document, crop everything out but document, and force it to display
      * as a rectangle
      *
-     * @param photoFilePath original image is saved here
+     * @param bitmap original image bitmap
      * @param corners the 4 document corners
      * @return bitmap with cropped and warped document
      */
-    fun crop(photoFilePath: String, corners: Quad): Bitmap {
+    fun crop(bitmap: Bitmap, corners: Quad): Bitmap {
         // read image with OpenCV
-        val image = this.getImageMatrixFromFilePath(photoFilePath)
+        val image = Mat()
+        Utils.bitmapToMat(bitmap, image)
 
         // convert top left, top right, bottom right, and bottom left document corners from
         // Android points to OpenCV points
