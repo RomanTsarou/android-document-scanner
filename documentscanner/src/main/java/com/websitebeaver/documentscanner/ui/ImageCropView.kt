@@ -5,7 +5,7 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapShader
 import android.graphics.Canvas
-import android.graphics.Color
+import android.graphics.ColorFilter
 import android.graphics.Paint
 import android.graphics.PointF
 import android.graphics.RectF
@@ -13,9 +13,8 @@ import android.graphics.Shader
 import android.util.AttributeSet
 import android.view.MotionEvent
 import androidx.appcompat.widget.AppCompatImageView
-import androidx.core.graphics.drawable.toBitmap
-import com.websitebeaver.documentscanner.enums.QuadCorner
 import com.websitebeaver.documentscanner.R
+import com.websitebeaver.documentscanner.enums.QuadCorner
 import com.websitebeaver.documentscanner.extensions.changeByteCountByResizing
 import com.websitebeaver.documentscanner.extensions.drawQuad
 import com.websitebeaver.documentscanner.models.Quad
@@ -89,9 +88,9 @@ class ImageCropView(context: Context, attrs: AttributeSet) : AppCompatImageView(
 
     init {
         // set cropper style
-        cropperLinesAndCornersStyles.color = Color.WHITE
+        cropperLinesAndCornersStyles.color = 0xFF007AFF.toInt()
         cropperLinesAndCornersStyles.style = Paint.Style.STROKE
-        cropperLinesAndCornersStyles.strokeWidth = 3f
+        cropperLinesAndCornersStyles.strokeWidth = resources.displayMetrics.density * 2
     }
 
     /**
@@ -143,7 +142,7 @@ class ImageCropView(context: Context, attrs: AttributeSet) : AppCompatImageView(
             previewImagePhoto = photo.changeByteCountByResizing(imagePreviewMaxSizeInBytes)
         }
         this.setImageBitmap(previewImagePhoto)
-        this.onSetImage()
+        this.onSetImage(photo)
     }
 
     /**
@@ -200,7 +199,8 @@ class ImageCropView(context: Context, attrs: AttributeSet) : AppCompatImageView(
         if (point.x >= imagePreviewBounds.left
             && point.y >= imagePreviewBounds.top
             && point.x <= imagePreviewBounds.right
-            && point.y <= imagePreviewBounds.bottom) {
+            && point.y <= imagePreviewBounds.bottom
+        ) {
             return true
         }
 
@@ -210,13 +210,18 @@ class ImageCropView(context: Context, attrs: AttributeSet) : AppCompatImageView(
     /**
      * This gets called once we insert an image in this image view
      */
-    private fun onSetImage() {
+    private fun onSetImage(photo: Bitmap) {
         cropperSelectedCornerFillStyles.style = Paint.Style.FILL
         cropperSelectedCornerFillStyles.shader = BitmapShader(
-            drawable.toBitmap(),
+            photo,
             Shader.TileMode.CLAMP,
             Shader.TileMode.CLAMP
         )
+    }
+
+    override fun setColorFilter(cf: ColorFilter?) {
+        super.setColorFilter(cf)
+        cropperSelectedCornerFillStyles.colorFilter = cf
     }
 
     /**
@@ -262,11 +267,13 @@ class ImageCropView(context: Context, attrs: AttributeSet) : AppCompatImageView(
                 prevTouchPoint = touchPoint
                 closestCornerToTouch = quad!!.getCornerClosestToPoint(touchPoint)
             }
+
             MotionEvent.ACTION_UP -> {
                 // when the user stops touching the screen reset these values
                 prevTouchPoint = null
                 closestCornerToTouch = null
             }
+
             MotionEvent.ACTION_MOVE -> {
                 // when the user drags their finger, update the closest corner position
                 val touchMoveXDistance = touchPoint.x - prevTouchPoint!!.x
@@ -278,7 +285,11 @@ class ImageCropView(context: Context, attrs: AttributeSet) : AppCompatImageView(
 
                 // make sure the user doesn't drag the corner outside the image preview container
                 if (isPointInsideImage(cornerNewPosition)) {
-                    quad!!.moveCorner(closestCornerToTouch!!, touchMoveXDistance, touchMoveYDistance)
+                    quad!!.moveCorner(
+                        closestCornerToTouch!!,
+                        touchMoveXDistance,
+                        touchMoveYDistance
+                    )
                 }
 
                 // record the point touched, so we can use it to calculate how far to move corner

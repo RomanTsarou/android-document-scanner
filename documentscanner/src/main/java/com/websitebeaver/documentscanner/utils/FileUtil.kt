@@ -1,7 +1,6 @@
 package com.websitebeaver.documentscanner.utils
 
-import android.os.Environment
-import androidx.activity.ComponentActivity
+import android.content.Context
 import java.io.File
 import java.io.IOException
 import java.text.SimpleDateFormat
@@ -17,11 +16,11 @@ class FileUtil {
     /**
      * create a temporary file
      *
-     * @param activity the current activity
+     * @param context the app context
      * @param pageNumber the current document page number
      */
     @Throws(IOException::class)
-    fun createImageFile(activity: ComponentActivity, pageNumber: Int): File {
+    fun createImageFile(context: Context, pageNumber: Int): File {
         // use current time to make file name more unique
         val dateTime: String = SimpleDateFormat(
             "yyyyMMdd_HHmmss",
@@ -29,7 +28,7 @@ class FileUtil {
         ).format(Date())
 
         // create file in pictures directory
-        val storageDir: File? = activity.getExternalFilesDir(Environment.DIRECTORY_PICTURES)
+        val storageDir: File = context.cacheDir!!
         return File.createTempFile(
             "SCAN_${pageNumber}_${dateTime}",
             ".jpg",

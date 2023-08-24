@@ -11,7 +11,8 @@ import android.graphics.Bitmap
  * @constructor creates a document
  */
 class Document(
-    val bitmap: Bitmap,
+    val originalPhotoPath: String,
+    val preview: Bitmap,
     var corners: Quad
 ) {
 }

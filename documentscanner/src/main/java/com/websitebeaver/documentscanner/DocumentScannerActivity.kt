@@ -91,20 +91,18 @@ class DocumentScannerActivity : AppCompatActivity() {
 
             // get bitmap from photo file path
             val file = File(originalPhotoPath)
-            val photoBitmap = runCatching {
-                ImageUtil().getImageFromFile(file)
+            val previewBitmap = runCatching {
+                ImageUtil().getImageFromFile(file, maxWidth = screenWidth)
             }
                 .onFailure { e ->
                     finishIntentWithError(e.message ?: "Error")
                 }
                 .getOrNull() ?: return@CameraUtil
 
-            file.delete()
-
             // get document corners by detecting them, or falling back to photo corners with
             // slight margin if we can't find the corners
             val corners = try {
-                val (topLeft, topRight, bottomLeft, bottomRight) = getDocumentCorners(photoBitmap)
+                val (topLeft, topRight, bottomLeft, bottomRight) = getDocumentCorners(previewBitmap)
                 Quad(topLeft, topRight, bottomRight, bottomLeft)
             } catch (exception: Exception) {
                 finishIntentWithError(
@@ -113,16 +111,16 @@ class DocumentScannerActivity : AppCompatActivity() {
                 return@CameraUtil
             }
 
-            document = Document(photoBitmap, corners)
+            document = Document(originalPhotoPath, previewBitmap, corners)
 
             if (letUserAdjustCrop) {
                 // user is allowed to move corners to make corrections
                 try {
                     // set preview image height based off of photo dimensions
-                    imageView.setImagePreviewBounds(photoBitmap, screenWidth, screenHeight)
+                    imageView.setImagePreviewBounds(previewBitmap, screenWidth, screenHeight)
 
                     // display original photo, so user can adjust detected corners
-                    imageView.setImage(photoBitmap)
+                    imageView.setImage(previewBitmap)
 
                     // document corner points are in original image coordinates, so we need to
                     // scale and move the points to account for blank space (caused by photo and
@@ -130,7 +128,7 @@ class DocumentScannerActivity : AppCompatActivity() {
                     val cornersInImagePreviewCoordinates = corners
                         .mapOriginalToPreviewImageCoordinates(
                             imageView.imagePreviewBounds,
-                            imageView.imagePreviewBounds.height() / photoBitmap.height
+                            imageView.imagePreviewBounds.height() / previewBitmap.height
                         )
 
                     // display cropper, and allow user to move corners
@@ -188,6 +186,23 @@ class DocumentScannerActivity : AppCompatActivity() {
         // doesn't see this until they finish taking a photo
         setContentView(R.layout.activity_image_crop)
         imageView = findViewById(R.id.image_view)
+        val filtersIds = listOf(R.id.filter0, R.id.filter1, R.id.filter2, R.id.filter3)
+        val filters = filtersIds.map { findViewById<View>(it) }
+        filters.forEach { v ->
+            v.setOnClickListener { _ ->
+                if (v.isSelected) return@setOnClickListener
+
+                filters.forEach { it.isSelected = (it === v) }
+                val colorFilter = when (v.id) {
+                    R.id.filter1 -> ImageUtil().getColorMatrixFilter(saturation = 0f)
+                    R.id.filter2 -> ImageUtil().getColorMatrixFilter(contrast = 2f, saturation = 0f)
+                    R.id.filter3 -> ImageUtil().getColorMatrixFilter(contrast = 2f)
+                    else -> null
+                }
+                imageView.colorFilter = colorFilter
+            }
+        }
+        filters.first().performClick()
 
         try {
             // validate maxNumDocuments option, and update default if user sets it
@@ -318,7 +333,7 @@ class DocumentScannerActivity : AppCompatActivity() {
             val cornersInOriginalImageCoordinates = imageView.corners
                 .mapPreviewToOriginalImageCoordinates(
                     imageView.imagePreviewBounds,
-                    imageView.imagePreviewBounds.height() / document.bitmap.height
+                    imageView.imagePreviewBounds.height() / document.preview.height
                 )
             document.corners = cornersInOriginalImageCoordinates
             documents.add(document)
@@ -350,7 +365,7 @@ class DocumentScannerActivity : AppCompatActivity() {
      */
     private fun onClickRetake() {
         // we're going to retake the photo, so delete the one we just took
-        document?.bitmap?.recycle()
+//        document?.bitmap?.recycle()
         openCamera()
     }
 
@@ -373,18 +388,20 @@ class DocumentScannerActivity : AppCompatActivity() {
         for ((pageNumber, document) in documents.withIndex()) {
             // crop document photo by using corners
             val croppedImage: Bitmap = try {
-                ImageUtil().crop(
-                    document.bitmap,
-                    document.corners
+                ImageUtil().cropDocument(
+                    document,
+                    imageView.colorFilter
                 )
             } catch (exception: Exception) {
                 finishIntentWithError("unable to crop image: ${exception.message}")
                 return
+            } finally {
+                File(document.originalPhotoPath).delete()
             }
 
-            if (croppedImage !== document.bitmap) {
-                document.bitmap.recycle()
-            }
+//            if (croppedImage !== document.bitmap) {
+//                document.bitmap.recycle()
+//            }
 
             // save cropped document photo
             try {

@@ -1,8 +1,9 @@
-<resources xmlns:tools="http://schemas.android.com/tools">
-    <style name="Theme.FullScreen" parent="@style/Theme.AppCompat.Light.NoActionBar">
+<resources>
+    <style name="Theme.FullScreen" parent="@style/Theme.AppCompat.NoActionBar">
         <item name="android:windowFullscreen">true</item>
         <item name="android:windowContentOverlay">@null</item>
         <item name="android:layout_width">fill_parent</item>
         <item name="android:layout_height">fill_parent</item>
+        <item name="android:windowBackground">@android:color/black</item>
     </style>
 </resources>

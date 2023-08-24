@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/filters"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:clipToPadding="false"
+    android:paddingVertical="12dp"
+    tools:showIn="@layout/activity_image_crop">
+
+    <LinearLayout
+        android:id="@+id/filter0"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:stateListAnimator="@animator/button_grow_animation">
+
+        <ImageView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@drawable/filter_bg"
+            android:backgroundTint="#E2DED2"
+            android:foreground="@drawable/filter_selected"
+            android:src="@drawable/filter_photo" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:ellipsize="end"
+            android:gravity="center"
+            android:maxLines="1"
+            android:text="@string/filter_photo"
+            android:textColor="@color/filter_btn_text" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/filter1"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:stateListAnimator="@animator/button_grow_animation">
+
+        <ImageView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@drawable/filter_bg"
+            android:foreground="@drawable/filter_selected"
+            android:src="@drawable/filter_grayscale" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:ellipsize="end"
+            android:gravity="center"
+            android:maxLines="1"
+            android:text="@string/filter_grayscale"
+            android:textColor="@color/filter_btn_text" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/filter2"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:stateListAnimator="@animator/button_grow_animation">
+
+        <ImageView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@drawable/filter_bg"
+            android:foreground="@drawable/filter_selected"
+            android:src="@drawable/filter_black_white" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:ellipsize="end"
+            android:gravity="center"
+            android:maxLines="1"
+            android:text="@string/filter_black_white"
+            android:textColor="@color/filter_btn_text" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/filter3"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:stateListAnimator="@animator/button_grow_animation">
+
+        <ImageView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@drawable/filter_bg"
+            android:foreground="@drawable/filter_selected"
+            android:src="@drawable/filter_color" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:ellipsize="end"
+            android:gravity="center"
+            android:maxLines="1"
+            android:text="@string/filter_color"
+            android:textColor="@color/filter_btn_text" />
+    </LinearLayout>
+
+</LinearLayout>

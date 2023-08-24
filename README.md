@@ -1,16 +1,29 @@
 # Android Document Scanner
 
+#### Fork with color filters
+
+[![Release](https://jitpack.io/v/RomanTsarou/android-document-scanner.svg)](https://jitpack.io/#RomanTsarou/android-document-scanner)
+
+![Json highlight](assets/scanner_screenshot.webp)
+
 This is an Android library that lets you scan documents. You can use it to create
-apps that let users scan notes, homework, business cards, receipts, or anything with a rectangular shape.
+apps that let users scan notes, homework, business cards, receipts, or anything with a rectangular
+shape.
 
 ![Dollar Android](https://user-images.githubusercontent.com/26162804/160306955-af9c5dd6-5cdf-4e2c-8770-c734a594985d.gif)
 
 ## Install
 
-Open `build.gradle` and add this to `dependencies`
+Open `build.gradle` and add this:
 
 ```bash
-implementation 'com.websitebeaver:documentscanner:1.3.5'
+repositories {
+    maven { url 'https://jitpack.io' }
+}
+
+dependencies{
+    implementation 'com.github.RomanTsarou:android-document-scanner:2.0.6'
+}
 ```
 
 ## Examples

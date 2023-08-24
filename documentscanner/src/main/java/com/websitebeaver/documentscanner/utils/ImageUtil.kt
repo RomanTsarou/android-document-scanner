@@ -3,13 +3,19 @@ package com.websitebeaver.documentscanner.utils
 import android.content.ContentResolver
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.Canvas
+import android.graphics.ColorFilter
+import android.graphics.ColorMatrix
+import android.graphics.ColorMatrixColorFilter
 import android.graphics.Matrix
+import android.graphics.Paint
 import android.graphics.Rect
+import android.graphics.RectF
 import android.media.ExifInterface
 import android.net.Uri
 import com.websitebeaver.documentscanner.extensions.distance
 import com.websitebeaver.documentscanner.extensions.toOpenCVPoint
-import com.websitebeaver.documentscanner.models.Quad
+import com.websitebeaver.documentscanner.models.Document
 import org.opencv.android.Utils
 import org.opencv.core.Mat
 import org.opencv.core.MatOfPoint2f
@@ -19,6 +25,7 @@ import org.opencv.imgproc.Imgproc
 import java.io.File
 import kotlin.math.max
 import kotlin.math.min
+
 
 /**
  * This class contains helper functions for processing images
@@ -42,18 +49,20 @@ class ImageUtil {
         return rotation
     }
 
-    private fun readBitmapFromFile(file: File, rotation: Int): Bitmap {
-        val maxContentSize = 4000 //Any limit to avoid running out of memory
+    private fun readBitmapFromFile(file: File, rotation: Int, maxWidth: Int): Bitmap {
         val opts = BitmapFactory.Options()
         opts.inJustDecodeBounds = true
+        opts.inMutable = rotation != 0
         file.inputStream()
             .use { BitmapFactory.decodeStream(it, null, opts) }
         val bitmapRect = Rect(0, 0, opts.outWidth, opts.outHeight)
-        val maxBitmapSize = max(bitmapRect.width(), bitmapRect.height())
         opts.inJustDecodeBounds = false
-        opts.inSampleSize = max(1, maxBitmapSize / maxContentSize)
-        val bitmap = file.inputStream()
-            .use { BitmapFactory.decodeStream(it, null, opts)!! }
+        val width =
+            if (rotation == 90 || rotation == 270) bitmapRect.height() else bitmapRect.width()
+        opts.inSampleSize = max(1, width / maxWidth)
+        val bitmap = file.inputStream().use {
+            BitmapFactory.decodeStream(it, null, opts)!!
+        }
         return if (rotation != 0) {
             val rotated = Bitmap.createBitmap(
                 bitmap,
@@ -77,7 +86,7 @@ class ImageUtil {
      * @param file image is saved here
      * @return image bitmap
      */
-    fun getImageFromFile(file: File): Bitmap {
+    fun getImageFromFile(file: File, maxWidth: Int): Bitmap {
         if (!file.exists()) {
             throw Exception("File doesn't exist - $file")
         }
@@ -90,21 +99,33 @@ class ImageUtil {
             throw Exception("You don't have permission to read $file")
         }
         val rotation = getExifRotation(file.absolutePath)
-        return readBitmapFromFile(file, rotation)
+        return readBitmapFromFile(file, rotation, maxWidth = maxWidth)
     }
 
     /**
      * take a photo with a document, crop everything out but document, and force it to display
      * as a rectangle
      *
-     * @param bitmap original image bitmap
-     * @param corners the 4 document corners
+     * @param document with original image data
+     * @param colorFilter for this image
      * @return bitmap with cropped and warped document
      */
-    fun crop(bitmap: Bitmap, corners: Quad): Bitmap {
+    fun cropDocument(document: Document, colorFilter: ColorFilter?): Bitmap {
+        val file = File(document.originalPhotoPath)
+        val bitmap = getImageFromFile(file, 4000)
+
         // read image with OpenCV
         val image = Mat()
         Utils.bitmapToMat(bitmap, image)
+
+        // convert corners from image preview coordinates to original photo coordinates
+        // (original image is probably bigger than the preview image)
+        val preview = document.preview
+        val corners = document.corners
+            .mapPreviewToOriginalImageCoordinates(
+                RectF(0f, 0f, 1f * preview.width, 1f * preview.height),
+                1f * preview.height / bitmap.height
+            )
 
         // convert top left, top right, bottom right, and bottom left document corners from
         // Android points to OpenCV points
@@ -150,6 +171,13 @@ class ImageUtil {
             Bitmap.Config.ARGB_8888
         )
         Utils.matToBitmap(output, croppedBitmap)
+        val canvas = Canvas(croppedBitmap)
+
+        if (colorFilter != null) {
+            val paint = Paint()
+            paint.colorFilter = colorFilter
+            canvas.drawBitmap(croppedBitmap, 0f, 0f, paint)
+        }
 
         return croppedBitmap
     }
@@ -167,5 +195,25 @@ class ImageUtil {
         return BitmapFactory.decodeStream(
             contentResolver.openInputStream(Uri.parse(fileUriString))
         )
+    }
+
+    fun getColorMatrixFilter(
+        contrast: Float = 1f,
+        brightness: Float = 0f,
+        saturation: Float = 1f,
+    ): ColorMatrixColorFilter {
+        val cm = ColorMatrix(
+            floatArrayOf(
+                contrast, 0f, 0f, 0f, brightness,
+                0f, contrast, 0f, 0f, brightness,
+                0f, 0f, contrast, 0f, brightness,
+                0f, 0f, 0f, 1f, 0f
+            )
+        )
+        if (saturation != 1f) {
+            val cmSaturation = ColorMatrix().apply { setSaturation(saturation) }
+            cm.postConcat(cmSaturation)
+        }
+        return ColorMatrixColorFilter(cm)
     }
 }
