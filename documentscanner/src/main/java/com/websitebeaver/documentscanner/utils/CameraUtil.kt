@@ -7,7 +7,6 @@ import android.provider.MediaStore
 import androidx.activity.ComponentActivity
 import androidx.activity.result.ActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.core.content.FileProvider
 import java.io.File
 import java.io.IOException
 
@@ -66,11 +65,7 @@ class CameraUtil(
         photoFilePath = photoFile.absolutePath
 
         // photo gets saved to this file path
-        val photoURI: Uri = FileProvider.getUriForFile(
-            activity,
-            "${activity.packageName}.DocumentScannerFileProvider",
-            photoFile
-        )
+        val photoURI: Uri = FileUtil.getUriForFile(activity, photoFile)
         takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, photoURI)
 
         // open camera

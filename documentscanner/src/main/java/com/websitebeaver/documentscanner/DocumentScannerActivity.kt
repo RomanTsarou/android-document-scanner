@@ -5,7 +5,6 @@ import android.content.Intent
 import android.graphics.Bitmap
 import android.net.Uri
 import android.os.Bundle
-import android.os.Environment
 import android.view.View
 import android.widget.ImageButton
 import androidx.appcompat.app.AppCompatActivity
@@ -22,10 +21,6 @@ import com.websitebeaver.documentscanner.ui.ImageCropView
 import com.websitebeaver.documentscanner.utils.CameraUtil
 import com.websitebeaver.documentscanner.utils.FileUtil
 import com.websitebeaver.documentscanner.utils.ImageUtil
-import com.websitebeaver.documentscanner.utils.insertMedia
-import com.websitebeaver.documentscanner.utils.needStoragePermission
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.launch
 import org.opencv.core.Point
 import java.io.File
 
@@ -111,7 +106,7 @@ class DocumentScannerActivity : AppCompatActivity() {
                 return@CameraUtil
             }
 
-            document = Document(originalPhotoPath, previewBitmap, corners)
+            document = Document(originalPhotoPath, previewBitmap, corners, imageView.colorFilter)
 
             if (letUserAdjustCrop) {
                 // user is allowed to move corners to make corrections
@@ -194,12 +189,27 @@ class DocumentScannerActivity : AppCompatActivity() {
 
                 filters.forEach { it.isSelected = (it === v) }
                 val colorFilter = when (v.id) {
-                    R.id.filter1 -> ImageUtil().getColorMatrixFilter(saturation = 0f)
-                    R.id.filter2 -> ImageUtil().getColorMatrixFilter(contrast = 2f, saturation = 0f)
-                    R.id.filter3 -> ImageUtil().getColorMatrixFilter(contrast = 2f)
+                    R.id.filter1 -> ImageUtil().getColorMatrixFilter(
+                        contrast = 2f,
+                        brightness = -100f,
+                        saturation = 0f
+                    )
+
+                    R.id.filter2 -> ImageUtil().getColorMatrixFilter(
+                        contrast = 5f,
+                        brightness = -400f,
+                        saturation = 0f
+                    )
+
+                    R.id.filter3 -> ImageUtil().getColorMatrixFilter(
+                        contrast = 2f,
+                        brightness = -100f
+                    )
+
                     else -> null
                 }
                 imageView.colorFilter = colorFilter
+                document?.colorFilter = colorFilter
             }
         }
         filters.first().performClick()
@@ -388,10 +398,7 @@ class DocumentScannerActivity : AppCompatActivity() {
         for ((pageNumber, document) in documents.withIndex()) {
             // crop document photo by using corners
             val croppedImage: Bitmap = try {
-                ImageUtil().cropDocument(
-                    document,
-                    imageView.colorFilter
-                )
+                ImageUtil().cropDocument(document)
             } catch (exception: Exception) {
                 finishIntentWithError("unable to crop image: ${exception.message}")
                 return
@@ -405,16 +412,9 @@ class DocumentScannerActivity : AppCompatActivity() {
 
             // save cropped document photo
             try {
-                val croppedImageFile = FileUtil().createImageFile(this, pageNumber)
+                val croppedImageFile = FileUtil.createImageFile(this, pageNumber)
                 croppedImage.saveToFile(croppedImageFile, croppedImageQuality)
                 croppedImageResults.add(Uri.fromFile(croppedImageFile).toString())
-                if (!needStoragePermission) {
-                    GlobalScope.launch {
-                        runCatching {
-                            insertMedia(croppedImageFile, Environment.DIRECTORY_PICTURES)
-                        }
-                    }
-                }
             } catch (exception: Exception) {
                 finishIntentWithError(
                     "unable to save cropped image: ${exception.message}"

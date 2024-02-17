@@ -4,7 +4,6 @@ import android.content.ContentResolver
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Canvas
-import android.graphics.ColorFilter
 import android.graphics.ColorMatrix
 import android.graphics.ColorMatrixColorFilter
 import android.graphics.Matrix
@@ -110,7 +109,7 @@ class ImageUtil {
      * @param colorFilter for this image
      * @return bitmap with cropped and warped document
      */
-    fun cropDocument(document: Document, colorFilter: ColorFilter?): Bitmap {
+    fun cropDocument(document: Document): Bitmap {
         val file = File(document.originalPhotoPath)
         val bitmap = getImageFromFile(file, 4000)
 
@@ -171,9 +170,10 @@ class ImageUtil {
             Bitmap.Config.ARGB_8888
         )
         Utils.matToBitmap(output, croppedBitmap)
-        val canvas = Canvas(croppedBitmap)
 
+        val colorFilter = document.colorFilter
         if (colorFilter != null) {
+            val canvas = Canvas(croppedBitmap)
             val paint = Paint()
             paint.colorFilter = colorFilter
             canvas.drawBitmap(croppedBitmap, 0f, 0f, paint)

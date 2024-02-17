@@ -1,6 +1,7 @@
 package com.websitebeaver.documentscanner.models
 
 import android.graphics.Bitmap
+import android.graphics.ColorFilter
 
 /**
  * This class contains the original document photo, and a cropper. The user can drag the corners
@@ -13,6 +14,6 @@ import android.graphics.Bitmap
 class Document(
     val originalPhotoPath: String,
     val preview: Bitmap,
-    var corners: Quad
-) {
-}
+    var corners: Quad,
+    var colorFilter: ColorFilter?
+)

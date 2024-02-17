@@ -1,6 +1,9 @@
 package com.websitebeaver.documentscanner.utils
 
 import android.content.Context
+import android.net.Uri
+import android.os.Environment
+import androidx.core.content.FileProvider
 import java.io.File
 import java.io.IOException
 import java.text.SimpleDateFormat
@@ -12,9 +15,9 @@ import java.util.Locale
  *
  * @constructor creates file util
  */
-class FileUtil {
+object FileUtil {
     /**
-     * create a temporary file
+     * create a file in the app cache folder
      *
      * @param context the app context
      * @param pageNumber the current document page number
@@ -22,17 +25,19 @@ class FileUtil {
     @Throws(IOException::class)
     fun createImageFile(context: Context, pageNumber: Int): File {
         // use current time to make file name more unique
-        val dateTime: String = SimpleDateFormat(
-            "yyyyMMdd_HHmmss",
-            Locale.US
-        ).format(Date())
+        val dateTime: String = SimpleDateFormat("yyyyMMddHHmmss", Locale.US).format(Date())
 
         // create file in pictures directory
-        val storageDir: File = context.cacheDir!!
-        return File.createTempFile(
-            "SCAN_${pageNumber}_${dateTime}",
-            ".jpg",
-            storageDir
+        val storageDir = File(context.filesDir!!, Environment.DIRECTORY_PICTURES)
+        storageDir.mkdirs()
+        return File(storageDir, "SCAN-${dateTime}${pageNumber}.jpg")
+    }
+
+    fun getUriForFile(context: Context, file: File): Uri {
+        return FileProvider.getUriForFile(
+            context,
+            "${context.packageName}.DocumentScannerFileProvider",
+            file,
         )
     }
 }
