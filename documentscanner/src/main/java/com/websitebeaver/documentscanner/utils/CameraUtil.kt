@@ -1,11 +1,7 @@
 package com.websitebeaver.documentscanner.utils
 
-import android.app.Activity
-import android.content.Intent
 import android.net.Uri
-import android.provider.MediaStore
 import androidx.activity.ComponentActivity
-import androidx.activity.result.ActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import java.io.File
 import java.io.IOException
@@ -32,19 +28,13 @@ class CameraUtil(
      * @property startForResult used to launch camera
      */
     private val startForResult = activity.registerForActivityResult(
-        ActivityResultContracts.StartActivityForResult()
-    ) { result: ActivityResult ->
-        when (result.resultCode) {
-            Activity.RESULT_OK -> {
-                // send back photo file path on capture success
-                onPhotoCaptureSuccess(photoFilePath)
-            }
-
-            Activity.RESULT_CANCELED -> {
-                // delete the photo since the user didn't finish taking the photo
-                File(photoFilePath).delete()
-                onCancelPhoto()
-            }
+        ActivityResultContracts.TakePicture()
+    ) { success ->
+        if (success) {
+            onPhotoCaptureSuccess(photoFilePath)
+        } else {
+            File(photoFilePath).delete()
+            onCancelPhoto()
         }
     }
 
@@ -55,9 +45,6 @@ class CameraUtil(
      */
     @Throws(IOException::class)
     fun openCamera(pageNumber: Int) {
-        // create intent to launch camera
-        val takePictureIntent = Intent(MediaStore.ACTION_IMAGE_CAPTURE)
-
         // create new file for photo
         val photoFile: File = File.createTempFile("PHOTO_", null, activity.cacheDir)
 
@@ -66,9 +53,8 @@ class CameraUtil(
 
         // photo gets saved to this file path
         val photoURI: Uri = FileUtil.getUriForFile(activity, photoFile)
-        takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, photoURI)
 
         // open camera
-        startForResult.launch(takePictureIntent)
+        startForResult.launch(photoURI)
     }
 }

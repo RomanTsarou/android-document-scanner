@@ -6,12 +6,12 @@ plugins {
 
 android {
     namespace "com.websitebeaver.documentscanner"
-    compileSdk 33
+    compileSdk 34
     archivesBaseName = "android-document-scanner"
 
     defaultConfig {
         minSdk 21
-        targetSdk 33
+        targetSdk 34
         consumerProguardFiles "consumer-rules.pro"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -34,12 +34,10 @@ android {
 }
 
 dependencies {
-    implementation 'androidx.appcompat:appcompat:1.6.1'
+    implementation 'androidx.appcompat:appcompat:1.7.0'
     implementation 'com.quickbirdstudios:opencv:4.5.3.0'
-    testImplementation 'junit:junit:4.13.2'
-    androidTestImplementation 'androidx.test.ext:junit:1.1.5'
-    androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.1'
 }
+
 publishing {
     publications {
         release(MavenPublication) {

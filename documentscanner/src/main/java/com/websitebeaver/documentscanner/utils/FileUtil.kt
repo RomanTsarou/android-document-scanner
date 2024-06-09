@@ -15,9 +15,9 @@ import java.util.Locale
  *
  * @constructor creates file util
  */
-object FileUtil {
+internal object FileUtil {
     /**
-     * create a file in the app cache folder
+     * create a file in the app folder
      *
      * @param context the app context
      * @param pageNumber the current document page number

@@ -22,7 +22,7 @@ repositories {
 }
 
 dependencies{
-    implementation 'com.github.RomanTsarou:android-document-scanner:2.0.6'
+    implementation 'com.github.RomanTsarou:android-document-scanner:2.0.8'
 }
 ```
 
